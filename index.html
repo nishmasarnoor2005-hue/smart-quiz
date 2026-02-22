@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic Quiz Portal</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e, #0f0c29);
+            background-size: 400% 400%;
+            animation: gradient 12s ease infinite;
+            height: 100vh; display: flex; justify-content: center; align-items: center;
+            font-family: 'Segoe UI', system-ui, sans-serif; color: white; overflow: hidden;
+        }
+        @keyframes gradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        
+        .glass-container {
+            background: rgba(255, 255, 255, 0.08);
+            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 25px; padding: 30px;
+            width: 90%; max-width: 500px; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6); text-align: center;
+        }
+
+        .input-group { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+        input { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.3); padding: 12px; border-radius: 10px; color: white; outline: none; font-size: 1rem; }
+        .btn-grid { display: grid; gap: 10px; margin-top: 20px; }
+        button { background: linear-gradient(135deg, #6e8efb 0%, #a777e3 100%); border: none; padding: 14px; border-radius: 10px; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        
+        /* Cleaned up styles to remove warnings */
+        .mb-20 { margin-bottom: 20px; }
+        .mb-10 { margin-bottom: 10px; }
+        .opacity-8 { opacity: 0.8; }
+        .full-width { width: 100%; margin-top: 10px; }
+
+        .correct { background: #2ecc71 !important; } .wrong { background: #e74c3c !important; }
+        .hide { display: none; } .error-text { color: #ff4b2b; margin-top: 15px; font-size: 0.85rem; }
+        
+        .score-big { 
+            font-size: 4rem; font-weight: 800; margin: 15px 0; 
+            background: linear-gradient(to bottom, #fff, #6e8efb); 
+            -webkit-background-clip: text; 
+            background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+        }
+    </style>
+</head>
+<body>
+
+    <div id="login-box" class="glass-container">
+        <h1>Student Portal</h1>
+        <p class="mb-10 opacity-8">Enter details to start the quiz</p>
+        <div class="input-group">
+            <input type="text" id="stu-name" placeholder="Enter Full Name" autocomplete="off">
+            <input type="text" id="stu-usn" placeholder="Enter USN" autocomplete="off">
+            <button onclick="auth()">Start Quiz</button>
+        </div>
+        <p id="err" class="error-text hide">Please enter both Name and USN!</p>
+    </div>
+
+    <div id="quiz-box" class="glass-container hide">
+        <h2 id="q-text" class="mb-20">Question...</h2>
+        <div id="ans-btns" class="btn-grid"></div>
+    </div>
+
+    <div id="result-box" class="glass-container hide">
+        <h2>Result Recorded</h2>
+        <div id="final-val" class="score-big">0</div>
+        <p>Data successfully sent to Lecturer.</p>
+        <button onclick="location.reload()" class="full-width">Logout / Exit</button>
+    </div>
+
+    <script>
+        const questions = [
+            { q: "Which planet is known as the Red Planet?", a: ["Mars", "Venus", "Jupiter"], c: "Mars" },
+            { q: "Which language handles web logic?", a: ["Python", "JavaScript", "C++"], c: "JavaScript" },
+            { q: "What is 10 + 5?", a: ["12", "15", "20"], c: "15" },
+            { q: "Largest HTML heading tag?", a: ["<head>", "<h6>", "<h1>"], c: "<h1>" },
+            { q: "Current Year?", a: ["2024", "2025", "2026"], c: "2026" }
+        ];
+
+        let idx = 0, score = 0, currentStudent = { name: "", usn: "" };
+
+        function auth() {
+            const nameInput = document.getElementById('stu-name').value;
+            const usnInput = document.getElementById('stu-usn').value;
+
+            if (nameInput.trim() !== "" && usnInput.trim() !== "") {
+                currentStudent = { name: nameInput.trim(), usn: usnInput.trim() };
+                document.getElementById('login-box').classList.add('hide');
+                document.getElementById('quiz-box').classList.remove('hide');
+                showQ();
+            } else {
+                document.getElementById('err').classList.remove('hide');
+            }
+        }
+
+        function showQ() {
+            const q = questions[idx];
+            document.getElementById('q-text').innerText = q.q;
+            const container = document.getElementById('ans-btns');
+            container.innerHTML = '';
+            q.a.forEach(choice => {
+                const btn = document.createElement('button');
+                btn.innerText = choice;
+                btn.onclick = () => {
+                    document.querySelectorAll('#ans-btns button').forEach(b => b.disabled = true);
+                    if (choice === q.c) { score++; btn.classList.add('correct'); }
+                    else { btn.classList.add('wrong'); }
+                    setTimeout(() => { 
+                        idx++; 
+                        if (idx < questions.length) showQ(); 
+                        else finish(); 
+                    }, 800);
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function finish() {
+            document.getElementById('quiz-box').classList.add('hide');
+            document.getElementById('result-box').classList.remove('hide');
+            const finalMark = score + "/" + questions.length;
+            document.getElementById('final-val').innerText = finalMark;
+
+            const formURL = "https://docs.google.com/forms/d/e/1FAIpQLSf-x2Nk6WDX8tVU92gz-a7ltjSHn3gY64TARWrVPls3rNpxqg/formResponse";
+            const formData = new FormData();
+            
+            // These IDs must match your pre-filled link
+            formData.append("entry.800045155", currentStudent.name); 
+            formData.append("entry.180905470", currentStudent.usn);
+            formData.append("entry.150499691", finalMark);
+
+            fetch(formURL, { method: "POST", mode: "no-cors", body: formData });
+        }
+    </script>
+</body>
+</html>
